@@ -104,9 +104,9 @@ svg.fill path { fill: #fff; }
 <style>
 .abt { background: #000; color: #fff; padding: clamp(90px, 18vh, 190px) clamp(20px, 4vw, 56px); border-top: 1px solid rgba(255,255,255,.16); display: grid; grid-template-columns: minmax(150px, 1fr) 3fr; gap: 28px 40px; align-items: start; }
 .abt h2 { margin: .5em 0 0; font: 400 15px 'Rockwell', 'ABG Slab', 'Noto Sans KR', sans-serif; letter-spacing: .06em; opacity: .62; }
-.abt ul { list-style: none; margin: 0; padding: 0; }
-.abt li { font-size: clamp(21px, 3vw, 42px); line-height: 1.42; letter-spacing: -.02em; padding: .34em 0; border-bottom: 1px solid rgba(255,255,255,.14); word-break: keep-all; }
-.abt li:first-child { padding-top: 0; }
+.abt .prose { max-width: 34em; margin: .5em 0 0; }
+.abt .prose p { margin: 0 0 1.4em; font: 400 15px/2 'Noto Sans KR', 'Malgun Gothic', sans-serif; letter-spacing: -.01em; color: rgba(255,255,255,.88); word-break: keep-all; }
+.abt .prose p:last-child { margin-bottom: 0; }
 .abt .sub { margin: 26px 0 0; font-size: 15px; line-height: 1.8; opacity: .62; word-break: keep-all; }
 .join { background: #000; color: #fff; padding: clamp(90px, 20vh, 220px) clamp(20px, 4vw, 56px) clamp(60px, 12vh, 120px); border-top: 1px solid rgba(255,255,255,.16); text-align: center; }
 .join p { margin: 0 0 30px; font-size: clamp(24px, 3.6vw, 52px); letter-spacing: -.02em; word-break: keep-all; }
@@ -117,12 +117,10 @@ svg.fill path { fill: #fff; }
 </style>
 <section class="abt" aria-labelledby="abt-vision">
   <h2 id="abt-vision">비전</h2>
-  <div>
-    <ul>
-      <li>2024년 설립 첫해, 20만 개 판매를 달성했습니다.</li>
-      <li>AI 직원과 함께, 가장 효율적으로 성장하고 있는 커머스 집단입니다.</li>
-      <li>어제보다 한 걸음씩만 더 나아간다면, 언젠가 그 너머에 닿습니다.</li>
-    </ul>
+  <div class="prose">
+    <p>에이비그라운드는 2024년 설립 첫해, 20만 개 판매를 달성했습니다.</p>
+    <p>제품 기획부터 디자인, 마케팅까지 AI 직원과 함께 일하며, 가장 효율적으로 성장하는 커머스 집단을 만들어 가고 있습니다.</p>
+    <p>우리는 어제보다 한 걸음씩만 더 나아간다면, 언젠가 한계 그 너머까지 갈 수 있다고 생각합니다. 이름에 담은 말도 그래서 하나입니다. Aspire beyond ground, 한계를 넘어 열망하라.</p>
   </div>
 </section>
 <section class="join">
@@ -210,7 +208,9 @@ let mode = new URLSearchParams(location.search).get('m') || 'scramble', shownKey
 const MIX = Array.from('abcdefghijklmnopqrstuvwxyz' + '限界超熱望越极怀' + 'をえてせよ' + 'стремиьзапдлы' + 'éáíà');      // 영어 26 + 한자 8 + 가나 5 + 키릴 13 + 악센트 4
 const SEQS = { 0: { list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], step: 175, dur: 100 }, 2: { list: [1, 9, 10, 8, 12], at: [0, 560, 1000, 1330, 1570], durs: [170, 150, 130, 110, 170] },      // 간격 560 → 440 → 330 → 240ms 로 점점 빨라진다
   5: { list: [12], step: 700, dur: 620 } };
-const KO_SYN = [['경계를', '장벽을', '한도를', '문턱을', '테두리', '울타리'], ['건너', '깨고', '지나', '뚫고', '딛고'], ['갈망하라', '소망하라', '염원하라', '꿈꾸어라', '희망하라', '도전하라']], KO_END = [.42, .7, 1];      // 낱말 자리마다 뜻이 비슷한 말(글자 수 같음)
+const KO_SYN = [['경계를', '장벽을', '한도를', '문턱을', '테두리', '울타리', '한계선', '경계선', '장애물', '극한을', '국경을', '지평선', '담장을', '기준을', '상식을', '지면을'],
+  ['건너', '깨고', '지나', '뚫고', '딛고', '넘고', '부숴', '밟고', '헤쳐', '뛰어', '벗어', '이겨', '제쳐', '박차'],
+  ['갈망하라', '소망하라', '염원하라', '꿈꾸어라', '희망하라', '도전하라', '동경하라', '추구하라', '갈구하라', '욕망하라', '비상하라', '도약하라', '지향하라', '나아가라', '전진하라', '기원하라', '상승하라', '성장하라']].map(a => a.sort(() => Math.random() - .5)), KO_END = [.42, .7, 1], KO_TICK = 85, KO_DUR = 1500;      // 낱말 자리마다 뜻이 비슷한 말(글자 수 같음). 처음에 한 번 섞고 차례로 돌려 같은 말이 바로 다시 나오지 않는다
 const KO_POOL = [...'가나다라마바사아자차카타파하고노도로모보소오조초구누두루무부수우주추기니디리미비시이지치한글말길별빛숲물땅꿈힘']; 
 function setMode(m) { mode = m; modesEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === m))); shownKey = ''; shownIdx = -1; scr = null; ty = null; }
 modesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
@@ -239,7 +239,7 @@ const varsEl = s1.querySelector('.vars');
 function setVar(v) { variant = v; varsEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === v))); }
 varsEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setVar(+b.dataset.v); s1.scrollTop = 0; window.scrollTo(0, 0); gateP = 0; start1(); }));
 setVar([0, 1, 2, 5].includes(variant) ? variant : 1);
-function start1() { shownKey = ''; ty = null; introT0 = performance.now(); hold1 = 0; seq0 = 0; scr = mode === 'scramble' ? { idx: 0, t0: introT0 + 120, tick: -1, dur: 1050 } : null; shownIdx = scr ? 0 : -1; }
+function start1() { shownKey = ''; ty = null; introT0 = performance.now(); hold1 = 0; seq0 = 0; scr = mode === 'scramble' ? { idx: 0, t0: introT0 + 120, tick: -1, dur: KO_DUR } : null; shownIdx = scr ? 0 : -1; }
 function draw1() {
   const now = performance.now(), N = WORDS.length;
   const range = s1.offsetHeight - innerHeight, rawTop = -s1.getBoundingClientRect().top; let p = range > 0 ? clamp(rawTop / range) : 0;
@@ -269,9 +269,9 @@ function draw1() {
     if (mode === 'scramble' && !seq0 && shownIdx === 0 && !scr && pRaw >= .003) seq0 = now;      // 한글 문장이 완성된 뒤 스크롤을 내리면 그때부터 0.175초마다 다음 나라 말
     if (mode === 'scramble' && variant === 1 && seq0 && shownIdx !== N - 1) {
       // 1 글자 칸 변환: 영어 원문의 글자 수만큼 칸을 두고, 칸마다 여러 나라 글자가 돌아가다가 왼쪽부터 영어로 자리를 잡는다
-      const t = now - seq0, EN = Array.from(WORDS[N - 1][1]), tick = Math.floor(t / 100), POOL = [1, 2, 3, 4, 5, 6, 7, 8, 11];
-      const settle = i => { const u = i / (EN.length - 1); return 380 + 2380 * u; };      // 칸이 자리를 잡는 시각: 처음엔 띄엄띄엄, 뒤로 갈수록 촘촘하게(점점 빨라진다)
-      if (t >= 2850) { put(WORDS[N - 1][1], N - 1, 'v1done'); shownIdx = N - 1; scr = null; hold1 = now + 250; }
+      const t = now - seq0, EN = Array.from(WORDS[N - 1][1]), tick = Math.floor(t / 80), POOL = [1, 2, 3, 4, 5, 6, 7, 8, 11];
+      const settle = i => { const u = i / (EN.length - 1); return 304 + 1904 * u; };      // 261111 홍석: a→d 20% 빠르게(예전 380 + 2380u)      // 칸이 자리를 잡는 시각: 처음엔 띄엄띄엄, 뒤로 갈수록 촘촘하게(점점 빨라진다)
+      if (t >= 2280) { put(WORDS[N - 1][1], N - 1, 'v1done'); shownIdx = N - 1; scr = null; hold1 = now + 250; }
       else {
         scr = scr && scr.v1 ? scr : { v1: true }; const KO = Array.from(WORDS[0][1]); let k = 0; while (k < EN.length && t >= settle(k)) k++;
         let out = rw(EN.slice(0, k).join('')); const k2 = Math.min(EN.length, k + 2);      // 자리 잡은 영어 + 경계 두 칸(여러 나라 글자) + 아직 남은 한글 문장
@@ -290,9 +290,9 @@ function draw1() {
     }
     if (scr && !scr.v1) {
       // B: 그 나라 글자들이 뒤섞여 있다가 앞에서부터 제자리를 찾는다
-      const q = (now - scr.t0) / scr.dur, c = Array.from(WORDS[scr.idx][1]), pool = scr.idx ? c.filter(x => x !== ' ') : KO_POOL, tick = Math.floor(now / (scr.idx ? 40 : 105));
+      const q = (now - scr.t0) / scr.dur, c = Array.from(WORDS[scr.idx][1]), pool = scr.idx ? c.filter(x => x !== ' ') : KO_POOL, tick = Math.floor(now / (scr.idx ? 40 : KO_TICK));
       if (q >= 1) { put(WORDS[scr.idx][1], scr.idx, 's' + scr.idx); hold1 = now + (scr.idx === 0 ? 0 : scr.idx === N - 1 ? 250 : 75); scr = null; }
-      else if (tick !== scr.tick && scr.idx === 0) { scr.tick = tick; const ws = WORDS[0][1].split(' '); put(ws.map((w, j) => q >= KO_END[j] ? w : KO_SYN[j][(tick + j * 2) % KO_SYN[j].length]).join(' '), 0, 'k' + tick); }
+      else if (tick !== scr.tick && scr.idx === 0) { scr.tick = tick; const ws = WORDS[0][1].split(' '); put(ws.map((w, j) => q >= KO_END[j] ? w : KO_SYN[j][(tick + j * 5) % KO_SYN[j].length]).join(' '), 0, 'k' + tick); }
       else if (tick !== scr.tick) { scr.tick = tick; put(c.map((x, i) => x === ' ' || i < q * c.length ? x : pool[Math.floor(Math.random() * pool.length)]).join(''), scr.idx, 'r' + tick); }
     }
     caret = shownIdx === 0 && !scr;      // 한글 문장이 완성되면 끝에서 커서가 깜빡인다
