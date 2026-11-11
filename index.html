@@ -28,7 +28,7 @@ body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; -webkit-font-sm
 .pin { height: 760vh; position: relative; }
 .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; background: #000; }
 .poster { position: absolute; inset: 0; background: #000; overflow: hidden; }
-.poster { cursor: grab; user-select: none; -webkit-user-select: none; }
+.poster { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
 .poster.grabbing { cursor: grabbing; }
 .poster canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .poster canvas.ov { pointer-events: none; }
@@ -173,7 +173,7 @@ svg.fill path { fill: #fff; }
   addEventListener('wheel', stop, { passive: true }); addEventListener('keydown', stop);
   // 폰(261111 홍석, 2차): 브라우저 관성 스크롤을 쓰지 않는다. 끄는 동안은 손가락을 1:1 로 따라가고, 다음 자리를 넘으면 고무줄처럼 저항만 준다(두 칸 뒤 너머로는 안 감).
   // 놓을 때만 판정: 칸 간격의 30% 이상 끌었거나 놓기 직전 속도가 빠르면(.5px/ms 이상, 100ms 넘게 멈췄으면 0) 그 방향 다음 칸, 아니면 원래 칸. 아무리 세게 튕겨도 한 칸만 간다
-  let fy0 = 0, sy0 = 0, track = false, cur = [0, 0], pU = 0, pD = 0, lU = 0, lD = 0, caught = null, smp = [];
+  let fx0 = 0, fy0 = 0, sy0 = 0, track = false, cur = [0, 0], pU = 0, pD = 0, lU = 0, lD = 0, caught = null, smp = [];
   const RUB = .35, PASS = .3, FAST = .5;
   const pts = () => { const cut = s1.offsetTop + (s1.offsetHeight - innerHeight) * .006, a = []; for (const q of zones()) { a.push(q[0]); if (q[1] !== q[0] && Math.abs(q[1] - cut) > 1) a.push(q[1]); } return [...new Set(a.map(Math.round))].sort((x, y) => x - y); };
   function base(b) {      // 기준 칸 cur(멈춰도 되는 구간이면 [시작, 끝]) · 위아래 다음 자리 pU/pD · 그 너머 한계 lU/lD
@@ -197,17 +197,20 @@ svg.fill path { fill: #fff; }
   }
   addEventListener('touchstart', e => {
     touching = true; caught = anim ? goTo : null; stop(); track = !!e.touches && e.touches.length === 1; if (!track) return;
-    fy0 = e.touches[0].clientY; sy0 = scrollY; smp = [[performance.now(), fy0]]; base(caught ?? sy0);
+    fx0 = e.touches[0].clientX; fy0 = e.touches[0].clientY; sy0 = scrollY; smp = [[performance.now(), fy0]]; base(caught ?? sy0);
   }, { passive: true });
   addEventListener('touchmove', e => {
     if (!track) return; if (e.touches.length !== 1) { track = false; return; }
     if (e.cancelable) e.preventDefault();
-    const y = e.touches[0].clientY, now = performance.now(); smp.push([now, y]); while (smp.length > 2 && now - smp[0][0] > 100) smp.shift();
-    const to = band(sy0 + (fy0 - y));      // 다음 자리까지는 1:1, 넘으면 넘은 거리 × .35
+    const x = e.touches[0].clientX, y = e.touches[0].clientY, now = performance.now(), A = window.__touchAxis; smp.push([now, y]); while (smp.length > 2 && now - smp[0][0] > 100) smp.shift();
+    // 제품 그림 위 손가락(261111 홍석): 좌우로 정해지면('x') 제품만 돌고 화면은 손댄 자리에 그대로. 아직 안 정해졌으면(null) 위아래가 더 클 때만 따라간다
+    const hold = A === 'x' || (A === null && Math.abs(x - fx0) > Math.abs(y - fy0));
+    const to = hold ? sy0 : band(sy0 + (fy0 - y));      // 다음 자리까지는 1:1, 넘으면 넘은 거리 × .35
     if (Math.abs(to - scrollY) >= .5) { dir = to > scrollY ? 1 : -1; scrollTo(0, to); } lastY = scrollY;
   }, { passive: false });
   const tEnd = () => {
     touching = false; clearTimeout(timer); if (!track) { timer = setTimeout(settle, 220); return; } track = false;
+    if (window.__touchAxis === 'x') { if (scrollY !== sy0) scrollTo(0, sy0); lastY = scrollY; return caught !== null ? go(caught, false, settle, true) : void (timer = setTimeout(settle, 220)); }      // 제품을 돌린 손가락: 자리를 옮기지 않는다(움직이던 화면을 잡았으면 가던 자리로)
     const now = performance.now(), F = smp[0], L = smp[smp.length - 1];
     release(smp.length < 2 || now - L[0] > 100 ? 0 : (F[1] - L[1]) / Math.max(16, L[0] - F[0]));      // 놓기 직전 100ms 의 손가락 속도
   };
@@ -649,6 +652,20 @@ const posterHTML = b => '<canvas class="gl"></canvas><canvas class="ov"></canvas
   '<p class="p-meta"><strong>' + b.ko + '</strong><span>' + b.tag + '</span><a href="' + b.url + '" target="_blank" rel="noopener">' + b.host + ' →</a></p>';
 
 const viewers = [];
+// 손가락 방향 판정(261111 홍석): 제품 그림 위에서 시작한 손가락은 처음 8px 을 보고 좌우('x' = 제품 돌리기) / 위아래('y' = 화면 넘기기)를 정하고, 놓을 때까지 바꾸지 않는다.
+// 그림 밖에서 시작하면 바로 'y'. 화면 넘기기 스크립트(snap-js)도 같은 값을 읽는다. 판정 전에는 null
+if (!window.__touchAxisOn) {
+  window.__touchAxisOn = true; window.__touchAxis = null; let ax0 = 0, ay0 = 0;
+  addEventListener('touchstart', e => {
+    const tl = e.touches || [], t = tl[0], on = tl.length === 1 && e.target.closest && e.target.closest('.poster');
+    window.__touchAxis = on ? null : 'y'; if (t) { ax0 = t.clientX; ay0 = t.clientY; }
+  }, { capture: true, passive: true });
+  addEventListener('touchmove', e => {
+    if (window.__touchAxis !== null || !e.touches || e.touches.length !== 1) return;
+    const ddx = e.touches[0].clientX - ax0, ddy = e.touches[0].clientY - ay0;
+    if (Math.max(Math.abs(ddx), Math.abs(ddy)) >= 8) window.__touchAxis = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
+  }, { capture: true, passive: true });
+}
 class Viewer {
   constructor(el, brand) {
     this.el = el; el.innerHTML = posterHTML(brand); this.bg = BG_ON && brand.bg ? rgb(brand.bg) : BLACK; if (BG_ON && brand.bg) el.style.background = brand.bg;
@@ -697,6 +714,22 @@ class Viewer {
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
     el.addEventListener('click', e => { if (this.moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
     el.addEventListener('dragstart', e => e.preventDefault());
+    // 폰(261111 홍석): 손가락을 좌우로 끌면 마우스처럼 돌리고, 위아래로 끌면 화면이 넘어간다. 방향은 window.__touchAxis(아래 판정)를 따른다. 폰에서는 위아래 각도는 건드리지 않는다
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { this.tOn = false; return; }
+      this.tOn = true; this.lx = e.touches[0].clientX; this.ly = e.touches[0].clientY; this.lt = performance.now();
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (!this.tOn) return; if (e.touches.length !== 1) { this.tOn = false; end(); return; }
+      const ax = window.__touchAxis; if (ax !== 'x') { if (ax === 'y') this.tOn = false; return; }
+      if (e.cancelable) e.preventDefault();
+      const x = e.touches[0].clientX, now = performance.now(), dtm = Math.max(4, now - this.lt) / 1000, a = (x - this.lx) * .008;
+      if (!this.drag) { this.drag = true; this.moved = 0; this.vx = 0; this.vy = 0; }      // 처음 판정에 쓴 몇 px 도 그대로 돌린다(lx 는 손을 댄 자리)
+      this.dx += a; this.moved += Math.abs(x - this.lx); this.vx = clamp(this.vx * .5 + a / dtm * .5, -45, 45);
+      this.lx = x; this.lt = now;
+    }, { passive: false });
+    const tEnd = () => { this.tOn = false; end(); };
+    el.addEventListener('touchend', tEnd, { passive: true }); el.addEventListener('touchcancel', tEnd, { passive: true });
     new ResizeObserver(() => this.resize()).observe(el);
     this.resize(); viewers.push(this);
   }
