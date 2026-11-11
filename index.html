@@ -182,7 +182,7 @@ svg.fill path { fill: #fff; }
     go(strong ? (d > 0 ? after : before) : (d > 0 ? before : after), false, settle, true);
   }
   addEventListener('touchstart', e => {
-    touching = true; stop(); track = e.touches.length === 1; if (!track) return;
+    touching = true; stop(); track = !!e.touches && e.touches.length === 1; if (!track) return;
     fy0 = fl = e.touches[0].clientY; flt = performance.now(); fv = 0; sy0 = scrollY;
     const P = pts(); limD = P.find(p => p > sy0 + 2) ?? maxY(); limU = [...P].reverse().find(p => p < sy0 - 2) ?? 0;
   }, { passive: true });
