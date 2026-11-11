@@ -9,7 +9,9 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="에이비그라운드 a.b.ground">
 <meta property="og:description" content="Aspire beyond ground. 에이비그라운드는 뉴트리엘·브메르·일감생활을 만드는 회사입니다.">
-<meta property="og:image" content="https://abground.kr/assets/og.jpg">
+<meta property="og:image" content="http://abground.kr/assets/og_261111.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="https://abground.kr/">
 <link rel="canonical" href="https://abground.kr/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ctext x='32' y='42' font-family='Rockwell,Arvo,Georgia,serif' font-size='26' font-weight='700' fill='white' text-anchor='middle'%3Ea.b%3C/text%3E%3C/svg%3E">
@@ -143,11 +145,11 @@ svg.fill path { fill: #fff; }
     secs.forEach(el => { const t = el.offsetTop, hgt = el.offsetHeight; z.push([Math.min(t, maxY()), Math.min(Math.max(t, t + hgt - vh), maxY())]); });
     z.push([maxY(), maxY()]); return z.sort((a, b) => a[0] - b[0]);
   }
-  function go(to, instant) {
-    cancelAnimationFrame(anim); const from = scrollY, d = to - from; if (Math.abs(d) < 2) return;
-    if (instant) { scrollTo(0, to); lastY = to; return; }
-    const dur = Math.max(480, Math.min(950, 380 + Math.abs(d) * .55)), t0 = performance.now();
-    const step = now => { const u = Math.min(1, (now - t0) / dur), e = u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; scrollTo(0, from + d * e); lastY = scrollY; anim = u < 1 ? requestAnimationFrame(step) : 0; };
+  function go(to, instant, done, out) {      // out = 손가락을 놓은 뒤처럼 빠르게 출발해 천천히 멈춘다
+    cancelAnimationFrame(anim); anim = 0; const from = scrollY, d = to - from; if (Math.abs(d) < 2) { if (done) done(); return; }
+    if (instant) { scrollTo(0, to); lastY = to; if (done) done(); return; }
+    const dur = out ? Math.max(380, Math.min(800, 300 + Math.abs(d) * .45)) : Math.max(480, Math.min(950, 380 + Math.abs(d) * .55)), t0 = performance.now();
+    const step = now => { const u = Math.min(1, (now - t0) / dur), e = out ? 1 - Math.pow(1 - u, 3) : u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; scrollTo(0, from + d * e); lastY = scrollY; anim = u < 1 ? requestAnimationFrame(step) : 0; if (!anim && done) done(); };
     anim = requestAnimationFrame(step);
   }
   function settle() {
@@ -165,8 +167,33 @@ svg.fill path { fill: #fff; }
   addEventListener('scroll', () => { if (anim) return; const y = scrollY; if (y !== lastY) dir = y > lastY ? 1 : -1; lastY = y; clearTimeout(timer); timer = setTimeout(settle, 140); }, { passive: true });
   const stop = () => { if (anim) { cancelAnimationFrame(anim); anim = 0; } };
   addEventListener('wheel', stop, { passive: true }); addEventListener('keydown', stop);
-  addEventListener('touchstart', () => { touching = true; stop(); }, { passive: true });
-  addEventListener('touchend', () => { touching = false; clearTimeout(timer); timer = setTimeout(settle, 220); }, { passive: true });
+  // 폰(261111 홍석): 브라우저 관성 스크롤을 쓰지 않고 손가락을 그대로 따라가다가, 놓으면 그 방향의 다음 자리 하나까지만 간다. 아무리 세게 튕겨도 구간을 건너뛰지 않는다
+  let fy0 = 0, sy0 = 0, fl = 0, flt = 0, fv = 0, limU = 0, limD = 0, track = false;
+  const pts = () => { const cut = s1.offsetTop + (s1.offsetHeight - innerHeight) * .006, a = []; for (const q of zones()) { a.push(q[0]); if (q[1] !== q[0] && Math.abs(q[1] - cut) > 1) a.push(q[1]); } return [...new Set(a.map(Math.round))].sort((x, y) => x - y); };
+  function fling(v) {
+    const y = scrollY, P = pts(), moved = y - sy0, d = Math.abs(v) > .2 ? Math.sign(v) : Math.abs(moved) > 2 ? Math.sign(moved) : 0;
+    if (!d) return settle();
+    dir = d; const T = Math.max(limU, Math.min(limD, y + v * 300)), hr = s1.offsetHeight - innerHeight, h0 = s1.offsetTop;
+    if (T > h0 + hr * .006 + 1 && T < h0 + hr - 1) return go(T, false, settle, true);      // 첫 화면 안쪽: 원래 규칙대로(영어 문장이 완성되면 로고까지)
+    if (zones().some(q => T >= q[0] - 1 && T <= q[1] + 1)) return go(T, false, settle, true);      // 멈춰도 되는 자리(긴 절 안쪽 포함)
+    const before = [...P].reverse().find(p => p <= T) ?? 0, after = P.find(p => p >= T) ?? maxY(), strong = Math.abs(v) > .2 || Math.abs(moved) > innerHeight * .12;
+    go(strong ? (d > 0 ? after : before) : (d > 0 ? before : after), false, settle, true);
+  }
+  addEventListener('touchstart', e => {
+    touching = true; stop(); track = e.touches.length === 1; if (!track) return;
+    fy0 = fl = e.touches[0].clientY; flt = performance.now(); fv = 0; sy0 = scrollY;
+    const P = pts(); limD = P.find(p => p > sy0 + 2) ?? maxY(); limU = [...P].reverse().find(p => p < sy0 - 2) ?? 0;
+  }, { passive: true });
+  addEventListener('touchmove', e => {
+    if (!track) return; if (e.touches.length !== 1) { track = false; return; }
+    if (e.cancelable) e.preventDefault();
+    const y = e.touches[0].clientY, now = performance.now(), dt = Math.max(8, now - flt);
+    fv = fv * .5 + (fl - y) / dt * .5; fl = y; flt = now;
+    const to = Math.max(limU, Math.min(limD, sy0 + (fy0 - y)));      // 끄는 동안에도 다음 자리 너머로는 가지 않는다
+    if (Math.abs(to - scrollY) >= .5) { dir = to > scrollY ? 1 : -1; scrollTo(0, to); } lastY = scrollY;
+  }, { passive: false });
+  const tEnd = () => { touching = false; clearTimeout(timer); if (!track) { timer = setTimeout(settle, 220); return; } track = false; if (performance.now() - flt > 120) fv = 0; fling(fv); };
+  addEventListener('touchend', tEnd, { passive: true }); addEventListener('touchcancel', tEnd, { passive: true });
   addEventListener('pointerdown', stop, { passive: true });
   window.__snapZones = zones;
 })();
@@ -763,10 +790,12 @@ class Viewer {
       const c = mem[slot] || (mem[slot] = { txt: '', t0: 0, tick: -1, out: '' }); if (c.txt !== txt) { c.txt = txt; c.t0 = now; }
       const q = (now - c.t0) / 460, tick = Math.floor(now / 45), pool = 'abcdefghijklmnopqrstuvwxyz';
       if (q >= 1) c.out = txt; else if (tick !== c.tick) { c.tick = tick; c.out = Array.from(txt, (ch, i) => i < q * txt.length ? ch : /[0-9]/.test(ch) ? String(Math.floor(Math.random() * 10)) : pool[Math.floor(Math.random() * 26)]).join(''); }
-      this.font(W < 640 ? 18 : 24); g.textBaseline = 'middle'; g.textAlign = al; g.fillText(c.out, x, y);
+      this.font(W < 640 ? 18 : 24); g.textBaseline = 'middle'; g.textAlign = 'left'; const fw = g.measureText(txt).width;      // 261111 홍석: 글자가 섞이는 동안에도 시작점이 흔들리지 않게, 완성된 낱말 폭으로 자리를 먼저 정한다
+      g.fillText(c.out, al === 'center' ? x - fw / 2 : al === 'right' ? x - fw : x, y);
     };
     word('age', it[0], (X0 + X1) / 2, by + 32, 'center');
-    this.font(W < 640 ? 18 : 24); if (lx - 18 - g.measureText(it[1]).width < 6) word('key', it[1], Math.max(8, lx - 6), Y0 - 20, 'left'); else word('key', it[1], lx - 18, (Y0 + Y1) / 2, 'right');
+    const fs = W < 640 ? 18 : 24; this.font(fs); if (!this.kwM || this.kwM[0] !== fs) this.kwM = [fs, Math.max(...P.tags.flat().map(t => g.measureText(t[1]).width))];      // 가장 긴 키워드로 자리를 한 번 정한다(낱말 길이에 따라 위·옆을 오가지 않게). 폰은 늘 자 위에 왼쪽 맞춤
+    if (W < 640 || lx - 18 - this.kwM[1] < 6) word('key', it[1], Math.max(8, lx - 6), Y0 - 20, 'left'); else word('key', it[1], lx - 18, (Y0 + Y1) / 2, 'right');
   }
   pose(deg, sway) { this.baseYaw = deg[0] * RAD; this.basePitch = deg[1] * RAD; this.yawIn = this.baseYaw + sway; }
 }
