@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>에이비그라운드 a.b.ground</title>
-<meta name="description" content="Aspire beyond ground. 에이비그라운드는 뉴트리엘·브메르·일감생활을 만드는 회사입니다.">
+<title>에이비그라운드</title>
+<meta name="description" content="빨리 팔리는 제품보다 다시 찾게 되는 제품을 만듭니다">
 <meta name="theme-color" content="#000000">
 <meta property="og:type" content="website">
-<meta property="og:title" content="에이비그라운드 a.b.ground">
-<meta property="og:description" content="Aspire beyond ground. 에이비그라운드는 뉴트리엘·브메르·일감생활을 만드는 회사입니다.">
+<meta property="og:title" content="에이비그라운드">
+<meta property="og:description" content="빨리 팔리는 제품보다 다시 찾게 되는 제품을 만듭니다">
 <meta property="og:image" content="https://abground.kr/assets/og_261111.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -183,7 +183,7 @@ svg.fill path { fill: #fff; }
   // 폰(261111 홍석, 2차): 브라우저 관성 스크롤을 쓰지 않는다. 끄는 동안은 손가락을 1:1 로 따라가고, 다음 자리를 넘으면 고무줄처럼 저항만 준다(두 칸 뒤 너머로는 안 감).
   // 놓을 때만 판정: 칸 간격의 30% 이상 끌었거나 놓기 직전 속도가 빠르면(.5px/ms 이상, 100ms 넘게 멈췄으면 0) 그 방향 다음 칸, 아니면 원래 칸. 아무리 세게 튕겨도 한 칸만 간다
   let fx0 = 0, fy0 = 0, sy0 = 0, track = false, cur = [0, 0], pU = 0, pD = 0, lU = 0, lD = 0, caught = null, smp = [];
-  const RUB = .35, PASS = .3, FAST = .5;
+  const RUB = .35, PASS = .3, PASS_PX = .12, FAST = .35;      // 261111 홍석 녹화: 간격이 큰 칸(비전↔일감생활 1180px)은 30% 가 너무 멀어 위로 못 올라감 → 화면 높이 12% 와 칸 30% 중 작은 쪽, 빠르기 기준도 .5→.35
   const pts = () => { const cut = s1.offsetTop + (s1.offsetHeight - innerHeight) * .006, a = []; for (const q of zones()) { a.push(q[0]); if (q[1] !== q[0] && Math.abs(q[1] - cut) > 1) a.push(q[1]); } return [...new Set(a.map(Math.round))].sort((x, y) => x - y); };
   function base(b) {      // 기준 칸 cur(멈춰도 되는 구간이면 [시작, 끝]) · 위아래 다음 자리 pU/pD · 그 너머 한계 lU/lD
     const q = zones().find(q => b >= q[0] - 2 && b <= q[1] + 2), P = pts(), M = maxY();
@@ -201,7 +201,7 @@ svg.fill path { fill: #fff; }
     if (y >= a - 1 && y <= b + 1) return b - a > 2 && d ? go(Math.max(a, Math.min(b, y + v * 300)), false, settle, true) : a === b ? go(a, false, settle, true) : settle();      // 원래 칸 안(긴 절이면 그 안에서 멈춤)
     const up = y < a, edge = up ? a : b, nxt = up ? pU : pD, to = up ? -1 : 1, gap = Math.abs(nxt - edge), over = Math.abs(y - edge);
     if (gap < 2 || (up ? y <= nxt + 1 : y >= nxt - 1)) return go(nxt, false, settle, true);      // 다음 자리를 넘겨 끌었으면 그 자리로(한 칸만)
-    const pass = d === to || (over >= gap * PASS && d !== -to && Math.sign(moved) === to);
+    const pass = d === to || (over >= Math.min(gap * PASS, innerHeight * PASS_PX) && d !== -to && Math.sign(moved) === to);
     go(pass ? nxt : edge, false, settle, true);
   }
   addEventListener('touchstart', e => {
