@@ -16,6 +16,7 @@
 <link rel="canonical" href="https://abground.kr/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ctext x='32' y='42' font-family='Rockwell,Arvo,Georgia,serif' font-size='26' font-weight='700' fill='white' text-anchor='middle'%3Ea.b%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://abground.kr/#org", "name": "에이비그라운드", "alternateName": ["(주)에이비그라운드", "주식회사 에이비그라운드", "ABGROUND", "a.b.ground", "ABG"], "url": "https://abground.kr/", "logo": "https://abground.kr/assets/apple-touch-icon.png", "slogan": "Aspire beyond ground", "foundingDate": "2024", "brand": [{"@type": "Brand", "name": "뉴트리엘", "url": "https://nutril.co.kr/"}, {"@type": "Brand", "name": "브메르", "url": "https://beumer.co.kr/"}, {"@type": "Brand", "name": "일감생활", "url": "https://ilseng.co.kr/"}]}, {"@type": "WebSite", "@id": "https://abground.kr/#site", "name": "에이비그라운드", "alternateName": "a.b.ground", "url": "https://abground.kr/", "inLanguage": "ko-KR", "publisher": {"@id": "https://abground.kr/#org"}}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -88,6 +89,7 @@ svg.fill path { fill: #fff; }
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 </head>
 <body>
+<h1 style="position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">에이비그라운드</h1>
 
 <section id="s1">
   <div class="track"><div class="stick">
@@ -136,7 +138,7 @@ svg.fill path { fill: #fff; }
 /* 구간 붙이기: 스크롤이 멈춘 자리가 구간 사이면 진행하던 방향의 구간으로 부드럽게 옮긴다 */
 (() => {
   const s1 = document.getElementById('s1'), pin = document.getElementById('pin'), N = 4;
-  let dir = 0, lastY = scrollY, timer = 0, anim = 0, touching = false;
+  let dir = 0, lastY = scrollY, timer = 0, anim = 0, goTo = 0, touching = false;
   const maxY = () => document.documentElement.scrollHeight - innerHeight;
   function zones() {      // 멈춰도 되는 자리들 [시작, 끝]. 브랜드마다 정면 · 위에서 본 모습 · 둘째 제품 세 자리
     const vh = innerHeight, z = [], hr = s1.offsetHeight - vh, h0 = s1.offsetTop, pt = pin.offsetTop, span = pin.offsetHeight - vh, n = (window.__brandCount || N), w = span / n;
@@ -151,7 +153,7 @@ svg.fill path { fill: #fff; }
     if (instant) { scrollTo(0, to); lastY = to; if (done) done(); return; }
     const dur = out ? Math.max(380, Math.min(800, 300 + Math.abs(d) * .45)) : Math.max(480, Math.min(950, 380 + Math.abs(d) * .55)), t0 = performance.now();
     const step = now => { const u = Math.min(1, (now - t0) / dur), e = out ? 1 - Math.pow(1 - u, 3) : u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; scrollTo(0, from + d * e); lastY = scrollY; anim = u < 1 ? requestAnimationFrame(step) : 0; if (!anim && done) done(); };
-    anim = requestAnimationFrame(step);
+    goTo = to; anim = requestAnimationFrame(step);      // goTo = 가던 목표(움직이는 중 다시 끌면 이 자리를 기준 칸으로 삼는다)
   }
   function settle() {
     if (touching || anim) return; const y = scrollY, hr = s1.offsetHeight - innerHeight, h0 = s1.offsetTop;
@@ -168,34 +170,48 @@ svg.fill path { fill: #fff; }
   addEventListener('scroll', () => { if (anim) return; const y = scrollY; if (y !== lastY) dir = y > lastY ? 1 : -1; lastY = y; clearTimeout(timer); timer = setTimeout(settle, 140); }, { passive: true });
   const stop = () => { if (anim) { cancelAnimationFrame(anim); anim = 0; } };
   addEventListener('wheel', stop, { passive: true }); addEventListener('keydown', stop);
-  // 폰(261111 홍석): 브라우저 관성 스크롤을 쓰지 않고 손가락을 그대로 따라가다가, 놓으면 그 방향의 다음 자리 하나까지만 간다. 아무리 세게 튕겨도 구간을 건너뛰지 않는다
-  let fy0 = 0, sy0 = 0, fl = 0, flt = 0, fv = 0, limU = 0, limD = 0, track = false;
+  // 폰(261111 홍석, 2차): 브라우저 관성 스크롤을 쓰지 않는다. 끄는 동안은 손가락을 1:1 로 따라가고, 다음 자리를 넘으면 고무줄처럼 저항만 준다(두 칸 뒤 너머로는 안 감).
+  // 놓을 때만 판정: 칸 간격의 30% 이상 끌었거나 놓기 직전 속도가 빠르면(.5px/ms 이상, 100ms 넘게 멈췄으면 0) 그 방향 다음 칸, 아니면 원래 칸. 아무리 세게 튕겨도 한 칸만 간다
+  let fy0 = 0, sy0 = 0, track = false, cur = [0, 0], pU = 0, pD = 0, lU = 0, lD = 0, caught = null, smp = [];
+  const RUB = .35, PASS = .3, FAST = .5;
   const pts = () => { const cut = s1.offsetTop + (s1.offsetHeight - innerHeight) * .006, a = []; for (const q of zones()) { a.push(q[0]); if (q[1] !== q[0] && Math.abs(q[1] - cut) > 1) a.push(q[1]); } return [...new Set(a.map(Math.round))].sort((x, y) => x - y); };
-  function fling(v) {
-    const y = scrollY, P = pts(), moved = y - sy0, d = Math.abs(v) > .2 ? Math.sign(v) : Math.abs(moved) > 2 ? Math.sign(moved) : 0;
-    if (!d) return settle();
-    dir = d; const T = Math.max(limU, Math.min(limD, y + v * 300)), hr = s1.offsetHeight - innerHeight, h0 = s1.offsetTop;
-    if (T > h0 + hr * .006 + 1 && T < h0 + hr - 1) return go(T, false, settle, true);      // 첫 화면 안쪽: 원래 규칙대로(영어 문장이 완성되면 로고까지)
-    if (zones().some(q => T >= q[0] - 1 && T <= q[1] + 1)) return go(T, false, settle, true);      // 멈춰도 되는 자리(긴 절 안쪽 포함)
-    const before = [...P].reverse().find(p => p <= T) ?? 0, after = P.find(p => p >= T) ?? maxY(), strong = Math.abs(v) > .2 || Math.abs(moved) > innerHeight * .12;
-    go(strong ? (d > 0 ? after : before) : (d > 0 ? before : after), false, settle, true);
+  function base(b) {      // 기준 칸 cur(멈춰도 되는 구간이면 [시작, 끝]) · 위아래 다음 자리 pU/pD · 그 너머 한계 lU/lD
+    const q = zones().find(q => b >= q[0] - 2 && b <= q[1] + 2), P = pts(), M = maxY();
+    cur = q ? [Math.round(q[0]), Math.round(q[1])] : [Math.round(b), Math.round(b)];
+    pD = P.find(p => p > cur[1] + 2) ?? M; lD = P.find(p => p > pD + 2) ?? M;
+    pU = [...P].reverse().find(p => p < cur[0] - 2) ?? 0; lU = [...P].reverse().find(p => p < pU - 2) ?? 0;
+  }
+  const band = r => { let t = r; if (r > pD) t = Math.min(lD, pD + (r - pD) * RUB); else if (r < pU) t = Math.max(lU, pU - (pU - r) * RUB); return Math.max(0, Math.min(maxY(), t)); };
+  function release(v) {
+    const y = scrollY, moved = y - sy0, d = Math.abs(v) >= FAST ? Math.sign(v) : 0, hr = s1.offsetHeight - innerHeight, h0 = s1.offsetTop, logo = h0 + hr;
+    dir = d || Math.sign(moved) || dir;
+    if (caught !== null && Math.abs(moved) < 6 && !d) return go(caught, false, settle, true);      // 움직이던 화면을 살짝 잡았다 놓음 → 가던 자리로
+    const [a, b] = cur;
+    if (y > h0 + hr * .006 + 1 && y < logo - 1 && Math.abs(a - logo) > 2) return go(Math.max(h0, Math.min(logo, y + v * 300)), false, settle, true);      // 첫 화면 안쪽: 원래 규칙(영어 문장이 완성되면 로고까지)
+    if (y >= a - 1 && y <= b + 1) return b - a > 2 && d ? go(Math.max(a, Math.min(b, y + v * 300)), false, settle, true) : a === b ? go(a, false, settle, true) : settle();      // 원래 칸 안(긴 절이면 그 안에서 멈춤)
+    const up = y < a, edge = up ? a : b, nxt = up ? pU : pD, to = up ? -1 : 1, gap = Math.abs(nxt - edge), over = Math.abs(y - edge);
+    if (gap < 2 || (up ? y <= nxt + 1 : y >= nxt - 1)) return go(nxt, false, settle, true);      // 다음 자리를 넘겨 끌었으면 그 자리로(한 칸만)
+    const pass = d === to || (over >= gap * PASS && d !== -to && Math.sign(moved) === to);
+    go(pass ? nxt : edge, false, settle, true);
   }
   addEventListener('touchstart', e => {
-    touching = true; stop(); track = !!e.touches && e.touches.length === 1; if (!track) return;
-    fy0 = fl = e.touches[0].clientY; flt = performance.now(); fv = 0; sy0 = scrollY;
-    const P = pts(); limD = P.find(p => p > sy0 + 2) ?? maxY(); limU = [...P].reverse().find(p => p < sy0 - 2) ?? 0;
+    touching = true; caught = anim ? goTo : null; stop(); track = !!e.touches && e.touches.length === 1; if (!track) return;
+    fy0 = e.touches[0].clientY; sy0 = scrollY; smp = [[performance.now(), fy0]]; base(caught ?? sy0);
   }, { passive: true });
   addEventListener('touchmove', e => {
     if (!track) return; if (e.touches.length !== 1) { track = false; return; }
     if (e.cancelable) e.preventDefault();
-    const y = e.touches[0].clientY, now = performance.now(), dt = Math.max(8, now - flt);
-    fv = fv * .5 + (fl - y) / dt * .5; fl = y; flt = now;
-    const to = Math.max(limU, Math.min(limD, sy0 + (fy0 - y)));      // 끄는 동안에도 다음 자리 너머로는 가지 않는다
+    const y = e.touches[0].clientY, now = performance.now(); smp.push([now, y]); while (smp.length > 2 && now - smp[0][0] > 100) smp.shift();
+    const to = band(sy0 + (fy0 - y));      // 다음 자리까지는 1:1, 넘으면 넘은 거리 × .35
     if (Math.abs(to - scrollY) >= .5) { dir = to > scrollY ? 1 : -1; scrollTo(0, to); } lastY = scrollY;
   }, { passive: false });
-  const tEnd = () => { touching = false; clearTimeout(timer); if (!track) { timer = setTimeout(settle, 220); return; } track = false; if (performance.now() - flt > 120) fv = 0; fling(fv); };
+  const tEnd = () => {
+    touching = false; clearTimeout(timer); if (!track) { timer = setTimeout(settle, 220); return; } track = false;
+    const now = performance.now(), F = smp[0], L = smp[smp.length - 1];
+    release(smp.length < 2 || now - L[0] > 100 ? 0 : (F[1] - L[1]) / Math.max(16, L[0] - F[0]));      // 놓기 직전 100ms 의 손가락 속도
+  };
   addEventListener('touchend', tEnd, { passive: true }); addEventListener('touchcancel', tEnd, { passive: true });
-  addEventListener('pointerdown', stop, { passive: true });
+  addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') stop(); }, { passive: true });      // 터치는 touchstart 가 멈춘다(가던 목표를 먼저 기억해야 해서)
   window.__snapZones = zones;
 })();
 </script>
@@ -604,7 +620,7 @@ const PRODUCTS = { nutril: buildProduct(makeNutril()), beumer: buildProduct(make
 const BRANDS = [
   { ko: '뉴트리엘', tag: '진짜 건강은, 자연에서 부터.', url: 'https://nutril.co.kr/', host: 'nutril.co.kr', product: 'nutril', ar: 5.47, bg: '#1F3F2A' },
   { ko: '브메르', tag: '건강한 하루는, 든든한 보호에서부터.', url: 'https://beumer.co.kr/', host: 'beumer.co.kr', product: 'beumer', ar: 5.0505, bg: '#FF8033' },
-  { ko: '일감생활', tag: '처음 만나보는 감성생활', url: 'https://ilseng.co.kr/', host: 'ilseng.co.kr', product: 'ilgam', ar: 5.1854, bg: '#8B9083' }
+  { ko: '일감생활', tag: '처음 만나보는 감성생활', url: 'https://ilseng.co.kr/', host: 'ilseng.co.kr', product: 'ilgam', ar: 5.1854, bg: '#8B9083', tilt: -1 }      // 261111 홍석: 슬리퍼가 바닥면이 아래로 가게 반대쪽으로 숙인다
 ];
 const WHITE = [1, 1, 1], BLACK = [0, 0, 0], BG_ON = new URLSearchParams(location.search).get('bg') !== '0';      // ?bg=0 이면 예전처럼 검정
 const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -617,6 +633,7 @@ function poseFrom(keys, t) {
   const l = keys[keys.length - 1]; return [l[1], l[2]];
 }
 const KEYS_SCROLL = [[0, 0, 0], [.10, 0, 0], [.30, 0, 90], [.40, 0, 90], [.78, 180, 0], [1, 180, 0]];
+const KEYS_BRAND = BRANDS.map(b => b.tilt ? KEYS_SCROLL.map(k => [k[0], k[1], k[2] * b.tilt]) : KEYS_SCROLL);      // 위에서 본 모습이 정면인 제품(일감생활)은 숙이는 방향을 뒤집어야 바닥이 아래로 온다
 const MORPH_FROM = 50, MORPH_SPAN = 80;
 
 let meas = new URLSearchParams(location.search).get('k') || 'ruler';
@@ -810,7 +827,7 @@ function update(time) {
   let ln = -1;
   layers.forEach((v, i) => {
     const last = i === BRANDS.length - 1, t = i < cur ? 1 : i === cur ? clamp(local / (last ? .92 : .8)) : 0;
-    v.pose(poseFrom(KEYS_SCROLL, t), Math.sin(time * .7 + i) * 2 * RAD);
+    v.pose(poseFrom(KEYS_BRAND[i], t), Math.sin(time * .7 + i) * 2 * RAD);
     if (i > 0) {
       const w = cur >= i ? 1 : cur === i - 1 ? ease((local - .82) / .18) : 0;
       v.el.style.clipPath = 'inset(' + ((1 - w) * 100).toFixed(2) + '% 0 0 0)'; v.el.style.visibility = w > 0 ? 'visible' : 'hidden';
