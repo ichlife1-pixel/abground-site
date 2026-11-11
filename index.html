@@ -107,7 +107,7 @@ svg.fill path { fill: #fff; }
 .abt { background: #000; color: #fff; padding: clamp(90px, 18vh, 190px) clamp(20px, 4vw, 56px); border-top: 1px solid rgba(255,255,255,.16); display: grid; grid-template-columns: minmax(150px, 1fr) 3fr; gap: 28px 40px; align-items: start; }
 .abt h2 { margin: .5em 0 0; font: 400 15px 'Rockwell', 'ABG Slab', 'Noto Sans KR', sans-serif; letter-spacing: .06em; opacity: .62; }
 .abt .prose { max-width: 34em; margin: .5em 0 0; }
-.abt .prose p { margin: 0 0 1.4em; font: 400 15px/2 'Noto Sans KR', 'Malgun Gothic', sans-serif; letter-spacing: -.01em; color: rgba(255,255,255,.88); word-break: keep-all; }
+.abt .prose p { margin: 0 0 1.12em; font: 400 15px/1.6 'Noto Sans KR', 'Malgun Gothic', sans-serif; letter-spacing: -.01em; color: rgba(255,255,255,.88); word-break: keep-all; }
 .abt .prose p:last-child { margin-bottom: 0; }
 .abt .sub { margin: 26px 0 0; font-size: 15px; line-height: 1.8; opacity: .62; word-break: keep-all; }
 .join { background: #000; color: #fff; padding: clamp(90px, 20vh, 220px) clamp(20px, 4vw, 56px) clamp(60px, 12vh, 120px); border-top: 1px solid rgba(255,255,255,.16); text-align: center; }
@@ -124,7 +124,6 @@ svg.fill path { fill: #fff; }
     <p>제품 기획부터 디자인, 마케팅까지 AI 직원과 함께 일하며, 가장 효율적으로 성장하는 커머스 집단을 만들어 가고 있습니다.</p>
     <p>생활용품부터 건강식품까지. 웰니스, 어렵게 생각하지 않습니다. 몸이 조금 덜 불편하고 마음이 조금 더 편한 하루, 그 작은 차이를 만드는 것이 우리의 일입니다.</p>
     <p>우리는 어제보다 한 걸음씩만 더 나아간다면, 언젠가 한계 그 너머까지 갈 수 있다고 생각합니다. 빨리 팔리는 제품보다 다시 찾게 되는 제품을 만들고 싶습니다. 느려 보여도 그것이 가장 강력한 길이라는 것을 알기 때문입니다.</p>
-    <p>이름에 담은 말도 그래서 하나입니다. Aspire beyond ground, 한계를 넘어 열망하라.</p>
   </div>
 </section>
 <section class="join">
@@ -298,9 +297,9 @@ function draw1() {
     if (mode === 'scramble' && !seq0 && shownIdx === 0 && !scr && pRaw >= .003) seq0 = now;      // 한글 문장이 완성된 뒤 스크롤을 내리면 그때부터 0.175초마다 다음 나라 말
     if (mode === 'scramble' && variant === 1 && seq0 && shownIdx !== N - 1) {
       // 1 글자 칸 변환: 영어 원문의 글자 수만큼 칸을 두고, 칸마다 여러 나라 글자가 돌아가다가 왼쪽부터 영어로 자리를 잡는다
-      const t = now - seq0, EN = Array.from(WORDS[N - 1][1]), tick = Math.floor(t / 29), POOL = [1, 2, 3, 4, 5, 6, 7, 8, 11];
-      const settle = i => { const u = i / (EN.length - 1); return 109 + 680 * u; };      // 261111 홍석: a→d 2배속 뒤 40% 더 빠르게(직전 152 + 952u, 그 전 304 + 1904u)      // 칸이 자리를 잡는 시각: 처음엔 띄엄띄엄, 뒤로 갈수록 촘촘하게(점점 빨라진다)
-      if (t >= 814) { put(WORDS[N - 1][1], N - 1, 'v1done'); shownIdx = N - 1; scr = null; hold1 = now + 250; }
+      const t = now - seq0, EN = Array.from(WORDS[N - 1][1]), tick = Math.floor(t / 32), POOL = [1, 2, 3, 4, 5, 6, 7, 8, 11];
+      const settle = i => { const u = i / (EN.length - 1); return 122 + 762 * u; };      // 261111 홍석: a→d 2배속 뒤 25% 더 빠르게(40% 는 너무 빨라 되돌림. 2배속 152 + 952u, 그 전 304 + 1904u)      // 칸이 자리를 잡는 시각: 처음엔 띄엄띄엄, 뒤로 갈수록 촘촘하게(점점 빨라진다)
+      if (t >= 912) { put(WORDS[N - 1][1], N - 1, 'v1done'); shownIdx = N - 1; scr = null; hold1 = now + 250; }
       else {
         scr = scr && scr.v1 ? scr : { v1: true }; const KO = Array.from(WORDS[0][1]); let k = 0; while (k < EN.length && t >= settle(k)) k++;
         let out = rw(EN.slice(0, k).join('')); const k2 = Math.min(EN.length, k + 2);      // 자리 잡은 영어 + 경계 두 칸(여러 나라 글자) + 아직 남은 한글 문장
