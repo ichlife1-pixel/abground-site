@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>에이비그라운드</title>
-<meta name="description" content="빨리 팔리는 제품보다 다시 찾게 되는 제품을 만듭니다">
+<meta name="description" content="몸이 조금 덜 불편하고 마음이 조금 더 편한 하루">
 <meta name="theme-color" content="#000000">
 <meta property="og:type" content="website">
 <meta property="og:title" content="에이비그라운드">
-<meta property="og:description" content="빨리 팔리는 제품보다 다시 찾게 되는 제품을 만듭니다">
+<meta property="og:description" content="몸이 조금 덜 불편하고 마음이 조금 더 편한 하루">
 <meta property="og:image" content="https://abground.kr/assets/og_261111.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -123,6 +123,14 @@ svg.fill path { fill: #fff; }
 .join a { display: inline-block; padding: 16px 30px; border: 1px solid #fff; border-radius: 999px; color: #fff; text-decoration: none; font-size: 16px; transition: background .2s, color .2s; }
 .join a:hover, .join a:focus-visible { background: #fff; color: #000; }
 .join small { display: block; margin-top: clamp(70px, 14vh, 140px); font: 400 13px 'Rockwell', 'ABG Slab', serif; letter-spacing: .08em; opacity: .45; }
+.site-foot { background: #000; color: #fff; border-top: 1px solid rgba(255,255,255,.16); padding: clamp(48px, 9vh, 90px) clamp(20px, 4vw, 56px) clamp(40px, 7vh, 70px); display: grid; grid-template-columns: 1fr auto; gap: 44px 40px; font: 400 13px/1.7 'Noto Sans KR', 'Malgun Gothic', sans-serif; word-break: keep-all; }
+.site-foot b { font-weight: 700; font-size: 14px; }
+.site-foot .addr { margin: 26px 0 0; opacity: .62; }
+.site-foot dl { margin: 0; display: grid; gap: 22px; }
+.site-foot dt { font-size: 12px; opacity: .62; }
+.site-foot dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; line-height: 1.5; }
+.site-foot a { color: inherit; text-decoration: none; } .site-foot a:hover, .site-foot a:focus-visible { text-decoration: underline; }
+@media (max-width: 720px) { .site-foot { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .abt { grid-template-columns: 1fr; } .abt h2 { margin: 0; } }
 </style>
 <section class="abt" aria-labelledby="abt-vision">
@@ -143,6 +151,16 @@ svg.fill path { fill: #fff; }
   <a href="https://www.notion.so/ABG-72fce2dd81dc43fd8479a227a9c7d51f" id="join-link" target="_blank" rel="noopener">채용 공고 보기 →</a>
   <small>a.b.ground · aspire beyond ground</small>
 </section>
+<footer class="site-foot">
+  <div>
+    <b>© ABGROUND Inc. All rights reserved.</b>
+    <p class="addr">주식회사 에이비그라운드<br>대구광역시 수성구 달구벌대로 3315, 3층</p>
+  </div>
+  <dl>
+    <div><dt>고객센터</dt><dd><a href="mailto:uklondon33@abground.kr">uklondon33@abground.kr</a><br><a href="tel:070-8098-8671">070-8098-8671</a></dd></div>
+    <div><dt>채용관련</dt><dd><a href="mailto:sonongseok@abground.kr">sonongseok@abground.kr</a></dd></div>
+  </dl>
+</footer>
 
 <script id="snap-js">
 /* 구간 붙이기: 스크롤이 멈춘 자리가 구간 사이면 진행하던 방향의 구간으로 부드럽게 옮긴다 */
