@@ -112,6 +112,11 @@ svg.fill path { fill: #fff; }
 .abt .prose { max-width: 34em; margin: .5em 0 0; }
 .abt .prose p { margin: 0 0 1.12em; font: 400 15px/1.6 'Noto Sans KR', 'Malgun Gothic', sans-serif; letter-spacing: -.01em; color: rgba(255,255,255,.88); word-break: keep-all; }
 .abt .prose p:last-child { margin-bottom: 0; }
+/* 261111 홍석: 비전 문단 4개가 화면에 들어오면 1→4 순서로 어두운 회색에서 흰색으로 밝아진다 */
+.abt .prose p { color: rgba(255,255,255,.16); transition: color 1.4s ease; }
+.abt.lit .prose p { color: rgba(255,255,255,.88); }
+.abt.lit .prose p:nth-child(2) { transition-delay: .6s; } .abt.lit .prose p:nth-child(3) { transition-delay: 1.2s; } .abt.lit .prose p:nth-child(4) { transition-delay: 1.8s; }
+@media (prefers-reduced-motion: reduce) { .abt .prose p { transition: none; } }
 .abt .sub { margin: 26px 0 0; font-size: 15px; line-height: 1.8; opacity: .62; word-break: keep-all; }
 .join { background: #000; color: #fff; padding: clamp(90px, 20vh, 220px) clamp(20px, 4vw, 56px) clamp(60px, 12vh, 120px); border-top: 1px solid rgba(255,255,255,.16); text-align: center; }
 .join p { margin: 0 0 30px; font-size: clamp(24px, 3.6vw, 52px); letter-spacing: -.02em; word-break: keep-all; }
@@ -129,6 +134,10 @@ svg.fill path { fill: #fff; }
     <p>우리는 어제보다 한 걸음씩만 더 나아간다면, 언젠가 한계 그 너머까지 갈 수 있다고 생각합니다. 빨리 팔리는 제품보다 다시 찾게 되는 제품을 만들고 싶습니다. 느려 보여도 그것이 가장 강력한 길이라는 것을 알기 때문입니다.</p>
   </div>
 </section>
+<script>
+(() => { const el = document.querySelector('.abt'); if (!el) return; if (!('IntersectionObserver' in window)) { el.classList.add('lit'); return; }
+  const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { el.classList.add('lit'); io.disconnect(); } }, { threshold: .35 }); io.observe(el); })();
+</script>
 <section class="join">
   <p>함께 성장할 동료를 찾고 있습니다.</p>
   <a href="https://www.notion.so/ABG-72fce2dd81dc43fd8479a227a9c7d51f" id="join-link" target="_blank" rel="noopener">채용 공고 보기 →</a>
@@ -652,6 +661,7 @@ const posterHTML = b => '<canvas class="gl"></canvas><canvas class="ov"></canvas
   '<p class="p-meta"><strong>' + b.ko + '</strong><span>' + b.tag + '</span><a href="' + b.url + '" target="_blank" rel="noopener">' + b.host + ' →</a></p>';
 
 const viewers = [];
+const NO_HOVER = matchMedia('(hover: none)').matches;      // 261111 홍석: 폰은 마우스로 각도를 못 바꾸니 멈춰 있어도 키워드가 1.7초마다 바뀐다
 // 손가락 방향 판정(261111 홍석): 제품 그림 위에서 시작한 손가락은 처음 8px 을 보고 좌우('x' = 제품 돌리기) / 위아래('y' = 화면 넘기기)를 정하고, 놓을 때까지 바꾸지 않는다.
 // 그림 밖에서 시작하면 바로 'y'. 화면 넘기기 스크립트(snap-js)도 같은 값을 읽는다. 판정 전에는 null
 if (!window.__touchAxisOn) {
@@ -837,7 +847,7 @@ class Viewer {
     g.beginPath(); g.moveTo(X0 + .5, by - 6); g.lineTo(X0 + .5, by + 6); g.moveTo(X1 - .5, by - 6); g.lineTo(X1 - .5, by + 6); g.moveTo(lx - 6, Y0 + .5); g.lineTo(lx + 6, Y0 + .5); g.moveTo(lx - 6, Y1 - .5); g.lineTo(lx + 6, Y1 - .5); g.stroke();
     const num = (v, x, y, al) => { g.textBaseline = 'middle'; this.font(22); const t = String(Math.round(v)), w = g.measureText(t).width, x0 = al === 'center' ? x - w / 2 : x - w; g.textAlign = 'left'; g.fillText(t, x0, y); };
     // 숫자 대신 키워드: 아래는 연령대, 왼쪽은 그 연령대의 키워드. 제품이 30도 돌 때마다 다음 것으로, 글자가 뒤섞이다가 자리를 잡는다
-    const sets = P.tags[o.st], yaw = Math.abs(Math.atan2(o.r0[2], o.r0[0]) / RAD), it = sets[Math.floor(yaw / 9 + .5) % sets.length], now = performance.now(), mem = this.scr || (this.scr = {});
+    const sets = P.tags[o.st], yaw = Math.abs(Math.atan2(o.r0[2], o.r0[0]) / RAD), it = sets[(Math.floor((yaw + Math.abs(this.pitch) / RAD) / 9 + .5) + (NO_HOVER ? Math.floor(performance.now() / 1700) : 0)) % sets.length]      /* 261111 홍석: 위에서 본 자리도 키워드가 바뀌게 위아래 각도까지 더한다(무릎 보호대 running·running) */, now = performance.now(), mem = this.scr || (this.scr = {});
     const word = (slot, txt, x, y, al) => {
       const c = mem[slot] || (mem[slot] = { txt: '', t0: 0, tick: -1, out: '' }); if (c.txt !== txt) { c.txt = txt; c.t0 = now; }
       const q = (now - c.t0) / 460, tick = Math.floor(now / 45), pool = 'abcdefghijklmnopqrstuvwxyz';
